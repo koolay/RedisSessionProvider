@@ -1,0 +1,75 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "home page";
+}
+@model MvcHtmlString
+
+<div class="positive ui button" id="btnLoop" onclick="loop()">start</div>
+<div class="negative ui button" id="btnStop" onclick="stop()">stop</div>
+
+<div class="ui success message">
+    @if (Model != null)
+    {
+        <span>@Model</span>
+    }
+    else
+    {
+        <text>None</text>
+    }
+ </div>
+
+    @section JavaScript{
+        <script type="text/javascript">
+   
+            var timers = [];
+            window.BASE_URL = 'http://localhost:22265';
+            function stop() {
+                for(var i=0;i<timers.length;i++)
+                {
+                    clearInterval(timers[i]);
+                }
+                $('#btnLoop').removeClass("disabled");
+                $('#btnStop').addClass("disabled");
+            }
+            function loop() {
+                $('#btnStop').removeClass("disabled");
+                $('#btnLoop').addClass("disabled");
+                var url1 = window.BASE_URL + '/home/t1';
+                var url2 = window.BASE_URL + '/home/t2';
+                var url3 = window.BASE_URL + '/home/t3';
+                var url4 = window.BASE_URL + '/home/t4';
+                var tm1 = setInterval(function () {
+                    $.get(url1, function (data) {
+                        console.log(data);
+                    });
+                }, 500);
+                timers[0]=tm1;
+
+                var tm2 = setInterval(function () {
+                    $.get(url2, function (data) {
+                        console.log(data);
+                    });
+                }, 500);
+                timers[1] = tm2;
+
+               var tm3 = setInterval(function () {
+                    $.get(url3, function (data) {
+                        console.log(data);
+                    });
+               }, 500);
+               timers[2] = tm3;
+
+
+               var tm4= setInterval(function () {
+                    $.get(url4, function (data) {
+                        console.log(data);
+                    });
+                }, 500);
+               timers[3] = tm4;
+
+            };
+            $(function () {
+
+            })
+        </script>
+    }

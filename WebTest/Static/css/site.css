@@ -1,0 +1,18 @@
+﻿body
+{ 
+    color: #222222;
+    font: 12px/1.62 Helvetica,Arial,sans-serif;
+    line-height: 22px;
+    margin: 0;
+    padding: 0;
+    word-wrap: break-word;
+    background-color: #ffffff;
+
+}
+a{ color:#666666;}
+a:hover{ color:#666666;}
+
+
+/*validation skin*/
+.input-validation-error{ border-color:#D95C5C!important;}
+.validation-summary-errors { margin-bottom:10px; text-align:left; color:#A95252; background-color:#F1D7D7; padding:15px;}

@@ -7,12 +7,13 @@
     using System.Threading.Tasks;
 
     using RedisSessionProvider.Serialization;
+using RedisSessionProvider.Redis;
 
     public static class RedisSerializationConfig
     {
         static RedisSerializationConfig()
         {
-            RedisSerializationConfig.SessionDataSerializer = new RedisJSONSerializer();
+            RedisSerializationConfig.SessionDataSerializer = new BinarySerializer();
         }
 
         /// <summary>
@@ -26,5 +27,8 @@
         ///     exception, helpful for tracking down incompatible types if they exist.
         /// </summary>
         public static Action<Exception> SerializerExceptionLoggingDel { get; set; }
+
+        public static IRedisDataAccessor RedisDataAccessor { get; set; }
+
     }
 }
