@@ -537,13 +537,13 @@
                                 byte[] origSerVal;
                                 if (this.SerializedRawData.TryGetValue(itm.Key, out origSerVal))
                                 {
-                                    if (serVal != origSerVal)
+                                    if (!serVal.SequenceEqual(origSerVal))
                                     {
                                         // object's value has changed, add to output list
                                         changedObjs.Add(
                                             new KeyValuePair<string, object>(
-                                                itm.Key, 
-                                                serVal));
+                                                itm.Key,
+                                                itm.Value));
 
                                         // and reset the original state of it to what it is now
                                         this.SerializedRawData.TryUpdate(
