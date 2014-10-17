@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using CtripSZ;
 using CtripSZ.Redis;
 using CtripSZ.Frameworks.Redis;
+using RedisSessionProvider.Serialization;
+using RedisSessionProvider.Config;
 
 namespace RedisSessionProvider.Redis
 {
@@ -19,55 +21,7 @@ namespace RedisSessionProvider.Redis
 
             clientManager = RedisHelper.GetClientManager(hostGroupName);
         }
-
-        public Dictionary<string, byte[]> GetHashAllItems(string hashId)
-        {
-            using (var client = this.clientManager.GetClient())
-            {
-                var nc = client as RedisNativeClient;
-                var multiDataList = nc.HGetAll(hashId);
-
-                if (multiDataList != null && multiDataList.Length > 0)
-                {
-                    Dictionary<string, byte[]> result = new Dictionary<string, byte[]>();
-                    for (var i = 0; i < multiDataList.Length; i += 2)
-                    {
-                        var key = multiDataList[i].FromUtf8Bytes();
-                        result.Add(key, multiDataList[i + 1]);
-                    }
-                    return result;
-                }
-
-                return null;
-            }
-
-        }
-
-        public void SetHash(string hashId, Dictionary<string, byte[]> map, int timeOut = 0)
-        {
-            if (map == null || map.Count < 1)
-                return;
-
-            var keyValuePairsList = map.ToList<KeyValuePair<string, byte[]>>();
-
-            using (var client = this.clientManager.GetClient())
-            {
-                var nc = client as RedisNativeClient;
-                var keys = new byte[keyValuePairsList.Count][];
-                var values = new byte[keyValuePairsList.Count][];
-
-                for (var i = 0; i < keyValuePairsList.Count; i++)
-                {
-                    var kvp = keyValuePairsList[i];
-                    keys[i] = kvp.Key.ToUtf8Bytes();
-                    values[i] = kvp.Value;
-                }
-
-                nc.HMSet(hashId, keys, values);
-
-            }
-        }
-
+ 
         public void RemoveHashFields(string hashId, params string[] fields)
         {
             if (fields == null || fields.Length < 1)
@@ -95,5 +49,70 @@ namespace RedisSessionProvider.Redis
                 client.ExpireEntryIn(key, expireIn);
             }
         }
+
+        public IRedisSerializer RedisSerializer
+        {
+            get
+            {
+                return RedisSerializationConfig.SessionDataSerializer ?? new BinarySerializer();
+            }
+            
+        }
+
+        public Dictionary<string, object> GetHashAllItems(string hashId)
+        {
+            using (var client = this.clientManager.GetClient())
+            {
+                var nc = client as RedisNativeClient;
+                var multiDataList = nc.HGetAll(hashId);
+
+                if (multiDataList != null && multiDataList.Length > 0)
+                {
+                    Dictionary<string, object> result = new Dictionary<string, object>();
+                    for (var i = 0; i < multiDataList.Length; i += 2)
+                    {
+                        var key = multiDataList[i].FromUtf8Bytes();
+                        var val = this.RedisSerializer.DeserializeOne(multiDataList[i + 1]);
+                        result.Add(key, val);
+                    }
+                    return result;
+                }
+
+                return null;
+            }
+        }
+
+        public void SetHash(string hashId, Dictionary<string, object> map, int timeOut = 0)
+        {
+             if (map == null || map.Count < 1)
+                return;
+
+            var keyValuePairsList = new List<KeyValuePair<string, byte[]>>();
+          
+            foreach(var kv in map)
+            {
+                var pair = new KeyValuePair<string, byte[]>(kv.Key, this.RedisSerializer.SerializeOne(kv.Value));
+                keyValuePairsList.Add(pair);
+            }
+
+            using (var client = this.clientManager.GetClient())
+            {
+                var nc = client as RedisNativeClient;
+                var keys = new byte[keyValuePairsList.Count][];
+                var values = new byte[keyValuePairsList.Count][];
+
+                for (var i = 0; i < keyValuePairsList.Count; i++)
+                {
+                    var kvp = keyValuePairsList[i];
+                    keys[i] = kvp.Key.ToUtf8Bytes();
+                    values[i] = kvp.Value;
+                }
+
+                nc.HMSet(hashId, keys, values);
+
+            }
+        }
+
+      
     }
 }

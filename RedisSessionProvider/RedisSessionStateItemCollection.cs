@@ -72,11 +72,11 @@
         /// <param name="redisHashData">An array of keys to values from the redis hash</param>
         /// <param name="redisConnName">The name of the connection from the redis connection wrapper</param>
         public RedisSessionStateItemCollection(
-            Dictionary<string,byte[]> redisHashData, 
+            Dictionary<string,object> redisHashData, 
              
             byte constructorSignatureDifferentiator)
         {
-            int byteDataTotal = 0;
+            this.cereal = RedisSerializationConfig.SessionDataSerializer;
             int concLevel = RedisSessionConfig.SessionAccessConcurrencyLevel;
             if (concLevel < 1)
             {
@@ -96,23 +96,23 @@
                 foreach (var sessDataEntry in redisHashData)
                 {
                     string hashItemKey = sessDataEntry.Key;
-                    byte[] hashItemValue = sessDataEntry.Value;
-
+                    object hashItemValue = sessDataEntry.Value;
+                    byte[] dat = this.cereal.SerializeOne(hashItemValue);
                     if (this.SerializedRawData.TryAdd(
                         hashItemKey,
-                        hashItemValue))
+                        dat))
                     {
                         this.Items.TryAdd(
                             hashItemKey,
                             new NotYetDeserializedPlaceholderValue());
                     }
 
-                    byteDataTotal += hashItemValue.Length;
+                    
                 }
             }
 
             this.ChangedKeysDict = new ConcurrentDictionary<string, ActionAndValue>();  
-            this.cereal = RedisSerializationConfig.SessionDataSerializer;
+         
  
         }
 
@@ -450,9 +450,9 @@
         ///     that back to Redis at the end.
         /// </summary>
         /// <returns>an IEnumerator that allows iteration over the changed elements of the Session.</returns>
-        public IEnumerable<KeyValuePair<string, byte[]>> GetChangedObjectsEnumerator()
+        public IEnumerable<KeyValuePair<string, object>> GetChangedObjectsEnumerator()
         {
-            List<KeyValuePair<string, byte[]>> changedObjs = new List<KeyValuePair<string, byte[]>>();
+            List<KeyValuePair<string, object>> changedObjs = new List<KeyValuePair<string, object>>();
 
             lock(enumLock)
             {
@@ -465,7 +465,7 @@
                     {
                         if (changeData.Value is SetValue)
                         {
-                            byte[] newSerVal = this.cereal.SerializeOne(changeData.Value.Value);
+                            var newSerVal = changeData.Value.Value;
 
                             // now set the SerializedRawData of the key to what we are returning to the
                             //      Session provider, which will write it to Redis so the next thread won't
@@ -476,11 +476,11 @@
                                 {
                                     // ok we added to the initial state, return the new value
                                     changedObjs.Add(
-                                        new KeyValuePair<string, byte[]>(
+                                        new KeyValuePair<string, object>(
                                             changeData.Key,
                                             newSerVal));
 
-                                    return newSerVal;
+                                    return this.cereal.SerializeOne(newSerVal);
                                 },
                                 (key, oldVal) =>
                                 {
@@ -488,11 +488,11 @@
                                     {
                                         // ok we reset the initial state, return the new value
                                         changedObjs.Add(
-                                            new KeyValuePair<string, byte[]>(
+                                            new KeyValuePair<string, object>(
                                                 changeData.Key,
                                                 newSerVal));
 
-                                        return newSerVal;
+                                        return this.cereal.SerializeOne(newSerVal);
                                     }                                    
 
                                     return oldVal;
@@ -508,7 +508,7 @@
                             {
                                 // null means delete to the serializer, perhaps change this in the future
                                 changedObjs.Add(
-                                    new KeyValuePair<string, byte[]>(
+                                    new KeyValuePair<string, object>(
                                         changeData.Key,
                                         null));
                             }
@@ -522,7 +522,7 @@
                         {
                             // only check keys that are not already in the changedObjs list
                             bool alreadyAdded = false;
-                            foreach (KeyValuePair<string, byte[]> markedItem in changedObjs)
+                            foreach (KeyValuePair<string, object> markedItem in changedObjs)
                             {
                                 if (markedItem.Key == itm.Key)
                                 {
@@ -541,7 +541,7 @@
                                     {
                                         // object's value has changed, add to output list
                                         changedObjs.Add(
-                                            new KeyValuePair<string, byte[]>(
+                                            new KeyValuePair<string, object>(
                                                 itm.Key, 
                                                 serVal));
 

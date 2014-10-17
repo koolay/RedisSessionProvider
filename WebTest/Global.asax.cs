@@ -32,8 +32,8 @@ namespace WebTest
         private void RedisSession_Init()
         {
             RedisSerializationConfig.RedisDataAccessor = new RedisSessionProvider.Redis.ServiceStackRedisDataAccessor("RedisSessionHost");
-            // RedisSerializationConfig.SessionDataSerializer = new BinarySerializer();
-           RedisSerializationConfig.SessionDataSerializer = new MsgPackSerializer();
+          //    RedisSerializationConfig.SessionDataSerializer = new BinarySerializer();
+         RedisSerializationConfig.SessionDataSerializer = new MsgPackSerializer();
             RedisSessionConfig.RedisKeyFromSessionIdDel = new Func<HttpContextBase, string, string>((context, sessId) =>
             {
                 return "urn:PBS:Session:" + sessId;

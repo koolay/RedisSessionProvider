@@ -31,7 +31,7 @@ namespace RedisSessionProvider.Serialization
 
         public byte[] SerializeOne(object origObj)
         {
-            byte[] result;
+            
             if (origObj == null)
             {
                 return null;

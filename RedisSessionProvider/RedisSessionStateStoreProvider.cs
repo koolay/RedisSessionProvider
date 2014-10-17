@@ -332,7 +332,8 @@
 
             try
             {
-                Dictionary<string, byte[]> redisData = RedisDataAccessor.GetHashAllItems(redisKey);
+                Dictionary<string, object> redisData = RedisDataAccessor.GetHashAllItems(redisKey);
+                
                 RedisDataAccessor.SetExpire(redisKey, expirationTimeout);
 
                 return new RedisSessionStateItemCollection(
@@ -365,7 +366,7 @@
             string currentRedisHashId,
             TimeSpan expirationTimeout)
         {
-            Dictionary<string,byte[]> setItems = new Dictionary<string,byte[]>();
+            Dictionary<string, object> setItems = new Dictionary<string,object>();
             List<string> delItems = new List<string>();
 
             
@@ -388,17 +389,11 @@
 
             if (setItems.Count > 0)
             {
-                Dictionary<string, byte[]> writeItems = setItems;
+                Dictionary<string, object> writeItems = setItems;
                 RedisDataAccessor.SetHash(currentRedisHashId, writeItems);
 
                 // call appropriate delegate if set for changing keys
-                if(RedisSessionConfig.RedisWriteFieldDel != null)
-                {
-                    RedisSessionConfig.RedisWriteFieldDel(
-                        context, 
-                        writeItems, 
-                        currentRedisHashId);
-                }
+               
             }
             if (delItems != null && delItems.Count > 0)
             {

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
+using RedisSessionProvider.Serialization;
 
 namespace RedisSessionProvider.Redis
 {
@@ -10,11 +11,13 @@ namespace RedisSessionProvider.Redis
     /// </summary>
     public interface IRedisDataAccessor
     {
+        IRedisSerializer RedisSerializer { get;}
+
         #region hash access
 
-        Dictionary<string, byte[]> GetHashAllItems(string hashId);
+        Dictionary<string, object> GetHashAllItems(string hashId);
 
-        void SetHash(string hashId, Dictionary<string, byte[]> map, int timeOut=0);
+        void SetHash(string hashId, Dictionary<string, object> map, int timeOut = 0);
 
         void RemoveHashFields(string hashId, params string[] fields);
 
